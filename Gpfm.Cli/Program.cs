@@ -1,7 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.IO.Compression;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace Gpfm.Cli;
 
@@ -28,7 +31,7 @@ public record class GitHubSource(
 public record class UriSource(
     string Name,
     [property: JsonPropertyName("uri")]
-    Uri Uri
+    string Uri
 ) : Source(Name);
 
 public record class Config(
@@ -60,6 +63,8 @@ internal class Program
         }
     }
 
+    private static readonly string s_jobId = $"{DateTimeOffset.Now:yyyyMMddHHmmssffff}";
+
     public static async Task ProcessSourceAsync(GitHubSource source)
     {
         var path = source.Repository.LocalPath.Trim('/').Split('/');
@@ -84,11 +89,36 @@ internal class Program
                 release = await GitHubApiClient.GetLatestReleaseAsync(owner, repo);
             }
         }
+
+        var asset = release.Assets.FirstOrDefault(a => Regex.IsMatch(a.Name, source.Asset))
+            ?? throw new InvalidOperationException($"No asset found matching pattern '{source.Asset}'");
+
+        var stagingDirectory = Path.Join("staging", s_jobId, source.Name);
+        Directory.CreateDirectory(stagingDirectory);
+        var stagingFile = Path.Join(stagingDirectory, asset.Name);
+        await DownloadFileAsync(asset.DownloadUrl, stagingFile);
+
+        var extractDirectory = Path.Join(stagingDirectory, Path.ChangeExtension(Path.GetFileName(stagingFile), null));
+        ZipFile.ExtractToDirectory(stagingFile, extractDirectory);
     }
 
     public static async Task ProcessSourceAsync(UriSource source)
     {
+        var stagingDirectory = Path.Join("staging", s_jobId, source.Name);
+        Directory.CreateDirectory(stagingDirectory);
+        var stagingFile = Path.Join(stagingDirectory, $"{Guid.NewGuid()}.zip");
+        await DownloadFileAsync(source.Uri, stagingFile);
 
+        var extractDirectory = Path.Join(stagingDirectory, Path.ChangeExtension(Path.GetFileName(stagingFile), null));
+        ZipFile.ExtractToDirectory(stagingFile, extractDirectory);
+    }
+
+    private static async Task DownloadFileAsync(string uri, string path)
+    {
+        using var fileStream = File.Create(path);
+        using var httpClient = new HttpClient();
+        var dataStream = await httpClient.GetStreamAsync(uri);
+        await dataStream.CopyToAsync(fileStream);
     }
 }
 
