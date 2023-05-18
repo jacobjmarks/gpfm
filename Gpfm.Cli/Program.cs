@@ -30,24 +30,40 @@ public record class GitHubSource(
 
 public record class UriSource(
     string Name,
-    [property: JsonPropertyName("uri")]
-    string Uri
+    [property: JsonPropertyName("url")]
+    Uri Url
 ) : Source(Name);
 
-public record class Config(
-    [property: JsonPropertyName("sources")]
-    ICollection<Source> Sources
+public record class JobConfig(
+    [property: JsonPropertyName("input")]
+    ICollection<Source> Sources,
+    [property: JsonPropertyName("output")]
+    string Output
 );
 
-internal class Program
+public class Job
 {
-    private static async Task Main(string[] args)
-    {
-        var configJson = await File.ReadAllTextAsync("config.json");
-        var config = JsonSerializer.Deserialize<Config>(configJson)
-            ?? throw new JsonException("Deserialized object instance is null");
+    private readonly string _tempDirectory = Path.Join(Path.GetTempPath(), "gpfm", Guid.NewGuid().ToString());
 
-        foreach (var source in config.Sources)
+    private readonly JobConfig _config;
+
+    public Job(JobConfig config)
+    {
+        _config = config;
+    }
+
+    public static async Task RunAsync(JobConfig config)
+    {
+        var job = new Job(config);
+        await job.RunAsync();
+    }
+
+    public async Task RunAsync()
+    {
+        if (Directory.Exists(_config.Output))
+            Directory.Delete(_config.Output, recursive: true);
+
+        foreach (var source in _config.Sources)
         {
             switch (source)
             {
@@ -63,12 +79,12 @@ internal class Program
         }
     }
 
-    private static readonly string s_jobId = $"{DateTimeOffset.Now:yyyyMMddHHmmssffff}";
-
-    public static async Task ProcessSourceAsync(GitHubSource source)
+    private async Task ProcessSourceAsync(GitHubSource source)
     {
         var path = source.Repository.LocalPath.Trim('/').Split('/');
-        if (path.Length != 2) throw new ArgumentException($"Invalid GitHub repository '{source.Repository}'", nameof(source));
+        if (path.Length != 2 || !path.All(p => !string.IsNullOrWhiteSpace(p)))
+            throw new ArgumentException($"Invalid GitHub repository '{source.Repository}'");
+
         var (owner, repo) = (path[0], path[1]);
 
         GitHubRelease? release;
@@ -93,21 +109,30 @@ internal class Program
         var asset = release.Assets.FirstOrDefault(a => Regex.IsMatch(a.Name, source.Asset))
             ?? throw new InvalidOperationException($"No asset found matching pattern '{source.Asset}'");
 
-        var stagingDirectory = Path.Join("staging", s_jobId, source.Name);
+        var stagingDirectory = Path.Join(_tempDirectory, source.Name);
         Directory.CreateDirectory(stagingDirectory);
         var stagingFile = Path.Join(stagingDirectory, asset.Name);
         await DownloadFileAsync(asset.DownloadUrl, stagingFile);
 
-        var extractDirectory = Path.Join(stagingDirectory, Path.ChangeExtension(Path.GetFileName(stagingFile), null));
+        var extractDirectory = _config.Output;
         ZipFile.ExtractToDirectory(stagingFile, extractDirectory);
     }
 
-    public static async Task ProcessSourceAsync(UriSource source)
+    private async Task ProcessSourceAsync(UriSource source)
     {
-        var stagingDirectory = Path.Join("staging", s_jobId, source.Name);
+        var stagingDirectory = Path.Join(_tempDirectory, source.Name);
         Directory.CreateDirectory(stagingDirectory);
-        var stagingFile = Path.Join(stagingDirectory, $"{Guid.NewGuid()}.zip");
-        await DownloadFileAsync(source.Uri, stagingFile);
+        var stagingFile = Path.Join(stagingDirectory, source.Url.Segments.Last());
+        await DownloadFileAsync(source.Url.ToString(), stagingFile);
+
+        try
+        {
+            using var _ = ZipFile.Open(stagingFile, ZipArchiveMode.Read);
+        }
+        catch (Exception e)
+        {
+            throw new ArgumentException($"Could not open zip archive from URL: '{source.Url}'", e);
+        }
 
         var extractDirectory = Path.Join(stagingDirectory, Path.ChangeExtension(Path.GetFileName(stagingFile), null));
         ZipFile.ExtractToDirectory(stagingFile, extractDirectory);
@@ -119,6 +144,18 @@ internal class Program
         using var httpClient = new HttpClient();
         var dataStream = await httpClient.GetStreamAsync(uri);
         await dataStream.CopyToAsync(fileStream);
+    }
+}
+
+internal class Program
+{
+    private static async Task Main(string[] args)
+    {
+        var configJson = await File.ReadAllTextAsync("config.json");
+        var config = JsonSerializer.Deserialize<JobConfig>(configJson)
+            ?? throw new JsonException("Deserialized object instance is null");
+
+        await Job.RunAsync(config);
     }
 }
 
