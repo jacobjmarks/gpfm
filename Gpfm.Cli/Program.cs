@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.IO.Compression;
-using System.Net;
+﻿using System.IO.Compression;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -8,13 +6,16 @@ using System.Text.RegularExpressions;
 
 namespace Gpfm.Cli;
 
-[JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
-[JsonDerivedType(typeof(GitHubSource), typeDiscriminator: "gitHub")]
-[JsonDerivedType(typeof(UriSource), typeDiscriminator: "uri")]
+[JsonPolymorphic(TypeDiscriminatorPropertyName = TypeDiscriminatorPropertyName)]
+[JsonDerivedType(typeof(GitHubSource), GitHubSource.TypeDiscriminator)]
+[JsonDerivedType(typeof(UrlSource), UrlSource.TypeDiscriminator)]
 public record class Source(
     [property: JsonPropertyName("name")]
     string Name
-);
+)
+{
+    public const string TypeDiscriminatorPropertyName = "type";
+};
 
 public record class GitHubSource(
     string Name,
@@ -26,13 +27,19 @@ public record class GitHubSource(
     string? Tag,
     [property: JsonPropertyName("asset")]
     string Asset
-) : Source(Name);
+) : Source(Name)
+{
+    public const string TypeDiscriminator = "gitHub";
+};
 
-public record class UriSource(
+public record class UrlSource(
     string Name,
     [property: JsonPropertyName("url")]
     Uri Url
-) : Source(Name);
+) : Source(Name)
+{
+    public const string TypeDiscriminator = "url";
+};
 
 public record class JobConfig(
     [property: JsonPropertyName("input")]
@@ -70,11 +77,11 @@ public class Job
                 case GitHubSource gitHubSource:
                     await ProcessSourceAsync(gitHubSource);
                     break;
-                case UriSource uriSource:
-                    await ProcessSourceAsync(uriSource);
+                case UrlSource urlSource:
+                    await ProcessSourceAsync(urlSource);
                     break;
                 default:
-                    throw new InvalidOperationException("Unexpected source type");
+                    throw new InvalidOperationException($"Unexpected source type '{source.GetType()}'");
             }
         }
     }
@@ -90,60 +97,48 @@ public class Job
         GitHubRelease? release;
 
         if (source.Tag != null)
-        {
             release = await GitHubApiClient.GetReleaseByTagAsync(owner, repo, source.Tag);
-        }
+        else if (source.IncludePrerelease)
+            release = await GitHubApiClient.GetLatestReleaseAsync(owner, repo);
         else
-        {
-            if (source.IncludePrerelease)
-            {
-                var releases = await GitHubApiClient.GetReleasesAsync(owner, repo);
-                release = releases.First(r => !r.IsPreRelease);
-            }
-            else
-            {
-                release = await GitHubApiClient.GetLatestReleaseAsync(owner, repo);
-            }
-        }
+            release = (await GitHubApiClient.GetReleasesAsync(owner, repo))
+                .First(r => !r.IsPreRelease);
 
         var asset = release.Assets.FirstOrDefault(a => Regex.IsMatch(a.Name, source.Asset))
             ?? throw new InvalidOperationException($"No asset found matching pattern '{source.Asset}'");
 
-        var stagingDirectory = Path.Join(_tempDirectory, source.Name);
-        Directory.CreateDirectory(stagingDirectory);
-        var stagingFile = Path.Join(stagingDirectory, asset.Name);
-        await DownloadFileAsync(asset.DownloadUrl, stagingFile);
+        var stagingDirectory = new DirectoryInfo(Path.Join(_tempDirectory, source.Name));
+        if (!stagingDirectory.Exists) stagingDirectory.Create();
+
+        var stagingFile = new FileInfo(Path.Join(stagingDirectory.FullName, asset.Name));
+
+        using (var httpClient = new HttpClient())
+        using (var fileDownloadStream = await httpClient.GetStreamAsync(asset.DownloadUrl))
+        using (var stagingFileStream = stagingFile.OpenWrite())
+            await fileDownloadStream.CopyToAsync(stagingFileStream);
 
         var extractDirectory = _config.Output;
-        ZipFile.ExtractToDirectory(stagingFile, extractDirectory);
+        ZipFile.ExtractToDirectory(stagingFile.FullName, extractDirectory, overwriteFiles: true);
     }
 
-    private async Task ProcessSourceAsync(UriSource source)
+    private async Task ProcessSourceAsync(UrlSource source)
     {
-        var stagingDirectory = Path.Join(_tempDirectory, source.Name);
-        Directory.CreateDirectory(stagingDirectory);
-        var stagingFile = Path.Join(stagingDirectory, source.Url.Segments.Last());
-        await DownloadFileAsync(source.Url.ToString(), stagingFile);
+        var stagingDirectory = new DirectoryInfo(Path.Join(_tempDirectory, source.Name));
+        if (!stagingDirectory.Exists) stagingDirectory.Create();
 
-        try
-        {
-            using var _ = ZipFile.Open(stagingFile, ZipArchiveMode.Read);
-        }
-        catch (Exception e)
-        {
-            throw new ArgumentException($"Could not open zip archive from URL: '{source.Url}'", e);
-        }
+        var stagingFile = new FileInfo(Path.Join(stagingDirectory.FullName, source.Url.Segments.Last()));
+        if (string.IsNullOrEmpty(stagingFile.Extension))
+            stagingFile = new(stagingFile.FullName + ".tmp");
 
-        var extractDirectory = Path.Join(stagingDirectory, Path.ChangeExtension(Path.GetFileName(stagingFile), null));
-        ZipFile.ExtractToDirectory(stagingFile, extractDirectory);
-    }
+        // TODO better infer filename from Content-Disposition
 
-    private static async Task DownloadFileAsync(string uri, string path)
-    {
-        using var fileStream = File.Create(path);
-        using var httpClient = new HttpClient();
-        var dataStream = await httpClient.GetStreamAsync(uri);
-        await dataStream.CopyToAsync(fileStream);
+        using (var httpClient = new HttpClient())
+        using (var fileDownloadStream = await httpClient.GetStreamAsync(source.Url))
+        using (var stagingFileStream = stagingFile.OpenWrite())
+            await fileDownloadStream.CopyToAsync(stagingFileStream);
+
+        var extractDirectory = Path.Join(stagingDirectory.FullName, Path.ChangeExtension(stagingFile.Name, null));
+        ZipFile.ExtractToDirectory(stagingFile.FullName, extractDirectory, overwriteFiles: true);
     }
 }
 
@@ -163,7 +158,7 @@ public record class GitHubAsset(
     [property: JsonPropertyName("name")]
     string Name,
     [property: JsonPropertyName("browser_download_url")]
-    string DownloadUrl
+    Uri DownloadUrl
 );
 
 public record class GitHubRelease(
