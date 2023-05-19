@@ -97,13 +97,12 @@ public class Job
 
         GitHubRelease? release;
 
-        if (source.Tag != null)
+        if (!string.IsNullOrEmpty(source.Tag))
             release = await GitHubApiClient.GetReleaseByTagAsync(owner, repo, source.Tag);
         else if (source.IncludePreRelease)
-            release = await GitHubApiClient.GetLatestReleaseAsync(owner, repo);
+            release = (await GitHubApiClient.GetReleasesAsync(owner, repo)).First();
         else
-            release = (await GitHubApiClient.GetReleasesAsync(owner, repo))
-                .First(r => !r.IsPreRelease);
+            release = await GitHubApiClient.GetLatestReleaseAsync(owner, repo);
 
         var asset = release.Assets.FirstOrDefault(a => Regex.IsMatch(a.Name, source.Asset))
             ?? throw new InvalidOperationException($"No asset found matching pattern '{source.Asset}'");
