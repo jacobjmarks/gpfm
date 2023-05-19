@@ -21,8 +21,8 @@ public record class GitHubSource(
     string Name,
     [property: JsonPropertyName("repository")]
     Uri Repository,
-    [property: JsonPropertyName("includePrerelease")]
-    bool IncludePrerelease,
+    [property: JsonPropertyName("includePreRelease")]
+    bool IncludePreRelease,
     [property: JsonPropertyName("tag")]
     string? Tag,
     [property: JsonPropertyName("asset")]
@@ -72,6 +72,7 @@ public class Job
 
         foreach (var source in _config.Sources)
         {
+            Console.WriteLine($"Processing source: {source}");
             switch (source)
             {
                 case GitHubSource gitHubSource:
@@ -98,7 +99,7 @@ public class Job
 
         if (source.Tag != null)
             release = await GitHubApiClient.GetReleaseByTagAsync(owner, repo, source.Tag);
-        else if (source.IncludePrerelease)
+        else if (source.IncludePreRelease)
             release = await GitHubApiClient.GetLatestReleaseAsync(owner, repo);
         else
             release = (await GitHubApiClient.GetReleasesAsync(owner, repo))
@@ -111,6 +112,8 @@ public class Job
         if (!stagingDirectory.Exists) stagingDirectory.Create();
 
         var stagingFile = new FileInfo(Path.Join(stagingDirectory.FullName, asset.Name));
+
+        Console.WriteLine($"Downloading {asset.DownloadUrl} ...");
 
         using (var httpClient = new HttpClient())
         using (var fileDownloadStream = await httpClient.GetStreamAsync(asset.DownloadUrl))
@@ -130,6 +133,7 @@ public class Job
         if (string.IsNullOrEmpty(stagingFile.Extension))
             stagingFile = new(stagingFile.FullName + ".tmp");
 
+        Console.WriteLine($"Downloading {source.Url} ...");
         // TODO better infer filename from Content-Disposition
 
         using (var httpClient = new HttpClient())
