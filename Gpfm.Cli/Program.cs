@@ -1,4 +1,5 @@
-﻿using System.IO.Compression;
+﻿using System.CommandLine;
+using System.IO.Compression;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -147,13 +148,40 @@ public class Job
 
 internal class Program
 {
-    private static async Task Main(string[] args)
+    private static async Task<int> Main(string[] args)
     {
-        var configJson = await File.ReadAllTextAsync("config.json");
-        var config = JsonSerializer.Deserialize<JobConfig>(configJson)
-            ?? throw new JsonException("Deserialized object instance is null");
+        var configFileOption = new Option<FileInfo>(new[] { "--configFile", "-c" })
+        {
+            Description = "Configuration file for the job.",
+            IsRequired = true,
+        };
 
-        await Job.RunAsync(config);
+        var outDirectoryOption = new Option<DirectoryInfo>(new[] { "--outDir", "-o" })
+        {
+            Description = "Directory in which to store the merged output."
+                + "\nWARNING: Directory will be deleted when the job starts.",
+            IsRequired = true,
+        };
+
+        var rootCommand = new RootCommand("General Purpose File/Folder Merger (GPFM) CLI")
+        {
+            Name = "gpfm",
+        };
+        rootCommand.AddOption(configFileOption);
+        rootCommand.AddOption(outDirectoryOption);
+
+        rootCommand.SetHandler(async (configFile, outDirectory) =>
+        {
+            var configJson = await File.ReadAllTextAsync(configFile.FullName);
+            var config = JsonSerializer.Deserialize<JobConfig>(configJson)
+                ?? throw new JsonException("Deserialized object instance is null");
+
+            config = config with { Output = outDirectory.FullName };
+
+            await Job.RunAsync(config);
+        }, configFileOption, outDirectoryOption);
+
+        return await rootCommand.InvokeAsync(args);
     }
 }
 
