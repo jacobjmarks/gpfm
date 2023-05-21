@@ -12,7 +12,9 @@ namespace Gpfm.Cli;
 [JsonDerivedType(typeof(UrlSource), UrlSource.TypeDiscriminator)]
 public record class Source(
     [property: JsonPropertyName("name")]
-    string Name
+    string Name,
+    [property: JsonPropertyName("skip")]
+    bool Skip
 )
 {
     public const string TypeDiscriminatorPropertyName = "type";
@@ -20,6 +22,7 @@ public record class Source(
 
 public record class GitHubSource(
     string Name,
+    bool Skip,
     [property: JsonPropertyName("repository")]
     Uri Repository,
     [property: JsonPropertyName("includePreRelease")]
@@ -28,16 +31,17 @@ public record class GitHubSource(
     string? Tag,
     [property: JsonPropertyName("asset")]
     string Asset
-) : Source(Name)
+) : Source(Name, Skip)
 {
     public const string TypeDiscriminator = "gitHub";
 };
 
 public record class UrlSource(
     string Name,
+    bool Skip,
     [property: JsonPropertyName("url")]
     Uri Url
-) : Source(Name)
+) : Source(Name, Skip)
 {
     public const string TypeDiscriminator = "url";
 };
@@ -71,9 +75,18 @@ public class Job
         if (Directory.Exists(_config.Output))
             Directory.Delete(_config.Output, recursive: true);
 
+        var i = 0;
         foreach (var source in _config.Sources)
         {
-            Console.WriteLine($"Processing source: {source}");
+            Console.WriteLine($"[{i + 1:D2}] Processing source: {source}");
+
+            if (source.Skip)
+            {
+                Console.WriteLine("Skipping ...");
+                i++;
+                continue;
+            }
+
             switch (source)
             {
                 case GitHubSource gitHubSource:
@@ -85,6 +98,7 @@ public class Job
                 default:
                     throw new InvalidOperationException($"Unexpected source type '{source.GetType()}'");
             }
+            i++;
         }
     }
 
@@ -105,6 +119,8 @@ public class Job
         else
             release = await GitHubApiClient.GetLatestReleaseAsync(owner, repo);
 
+        Console.WriteLine($"Using release: {release.Name} ({release.TagName})");
+
         var asset = release.Assets.FirstOrDefault(a => Regex.IsMatch(a.Name, source.Asset))
             ?? throw new InvalidOperationException($"No asset found matching pattern '{source.Asset}'");
 
@@ -113,12 +129,14 @@ public class Job
 
         var stagingFile = new FileInfo(Path.Join(stagingDirectory.FullName, asset.Name));
 
-        Console.WriteLine($"Downloading {asset.DownloadUrl} ...");
+        Console.WriteLine($"Downloading asset '{asset.Name}' ...");
 
         using (var httpClient = new HttpClient())
         using (var fileDownloadStream = await httpClient.GetStreamAsync(asset.DownloadUrl))
         using (var stagingFileStream = stagingFile.OpenWrite())
             await fileDownloadStream.CopyToAsync(stagingFileStream);
+
+        Console.WriteLine($"Extracting ...");
 
         var extractDirectory = _config.Output;
         ZipFile.ExtractToDirectory(stagingFile.FullName, extractDirectory, overwriteFiles: true);
@@ -140,6 +158,8 @@ public class Job
         using (var fileDownloadStream = await httpClient.GetStreamAsync(source.Url))
         using (var stagingFileStream = stagingFile.OpenWrite())
             await fileDownloadStream.CopyToAsync(stagingFileStream);
+
+        Console.WriteLine($"Extracting ...");
 
         var extractDirectory = Path.Join(stagingDirectory.FullName, Path.ChangeExtension(stagingFile.Name, null));
         ZipFile.ExtractToDirectory(stagingFile.FullName, extractDirectory, overwriteFiles: true);
@@ -193,10 +213,12 @@ public record class GitHubAsset(
 );
 
 public record class GitHubRelease(
-    [property: JsonPropertyName("prerelease")]
-    bool IsPreRelease,
+    [property: JsonPropertyName("name")]
+    string Name,
     [property: JsonPropertyName("tag_name")]
     string TagName,
+    [property: JsonPropertyName("prerelease")]
+    bool IsPreRelease,
     [property: JsonPropertyName("assets")]
     ICollection<GitHubAsset> Assets
 );
