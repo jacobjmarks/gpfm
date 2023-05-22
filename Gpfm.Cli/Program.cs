@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.IO.Compression;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -10,6 +10,8 @@ namespace Gpfm.Cli;
 [JsonPolymorphic(TypeDiscriminatorPropertyName = TypeDiscriminatorPropertyName)]
 [JsonDerivedType(typeof(GitHubSource), GitHubSource.TypeDiscriminator)]
 [JsonDerivedType(typeof(UrlSource), UrlSource.TypeDiscriminator)]
+[JsonDerivedType(typeof(FileSource), FileSource.TypeDiscriminator)]
+[JsonDerivedType(typeof(FolderSource), FolderSource.TypeDiscriminator)]
 public record class Source(
     [property: JsonPropertyName("name")]
     string Name,
@@ -46,6 +48,26 @@ public record class UrlSource(
     public const string TypeDiscriminator = "url";
 };
 
+public record class FileSource(
+    string Name,
+    bool Skip,
+    [property: JsonPropertyName("file")]
+    string File
+) : Source(Name, Skip)
+{
+    public const string TypeDiscriminator = "file";
+};
+
+public record class FolderSource(
+    string Name,
+    bool Skip,
+    [property: JsonPropertyName("folder")]
+    string Folder
+) : Source(Name, Skip)
+{
+    public const string TypeDiscriminator = "folder";
+};
+
 public record class JobConfig(
     [property: JsonPropertyName("input")]
     ICollection<Source> Sources,
@@ -74,6 +96,7 @@ public class Job
     {
         if (Directory.Exists(_config.Output))
             Directory.Delete(_config.Output, recursive: true);
+        Directory.CreateDirectory(_config.Output);
 
         var i = 0;
         foreach (var source in _config.Sources)
@@ -94,6 +117,12 @@ public class Job
                     break;
                 case UrlSource urlSource:
                     await ProcessSourceAsync(urlSource);
+                    break;
+                case FileSource fileSource:
+                    await ProcessSourceAsync(fileSource);
+                    break;
+                case FolderSource folderSource:
+                    await ProcessSourceAsync(folderSource);
                     break;
                 default:
                     throw new InvalidOperationException($"Unexpected source type '{source.GetType()}'");
@@ -163,6 +192,52 @@ public class Job
 
         var extractDirectory = _config.Output;
         ZipFile.ExtractToDirectory(stagingFile.FullName, extractDirectory, overwriteFiles: true);
+    }
+
+    private Task ProcessSourceAsync(FileSource source)
+    {
+        var file = new FileInfo(source.File);
+        if (!file.Exists)
+            throw new ArgumentException($"File does not exist: '{source.File}'", nameof(source));
+
+        Console.WriteLine("Copying file ...");
+
+        var outFile = Path.Join(_config.Output, file.Name);
+        file.CopyTo(outFile, overwrite: true);
+        return Task.CompletedTask;
+    }
+
+    private Task ProcessSourceAsync(FolderSource source)
+    {
+        var folder = new DirectoryInfo(source.Folder);
+        if (!folder.Exists)
+            throw new ArgumentException($"Folder does not exist: '{source.Folder}'", nameof(source));
+
+        Console.WriteLine("Copying folder ...");
+
+        CopyDirectory(folder, new(_config.Output));
+        return Task.CompletedTask;
+    }
+
+    private void CopyDirectory(DirectoryInfo sourceDirectory, DirectoryInfo destinationDirectory, bool recursive = true)
+    {
+        if (!sourceDirectory.Exists)
+            throw new DirectoryNotFoundException($"Source directory not found: '{sourceDirectory.FullName}'");
+
+        var files = sourceDirectory.GetFiles();
+        var subDirectories = sourceDirectory.GetDirectories();
+
+        if (!destinationDirectory.Exists)
+            Directory.CreateDirectory(destinationDirectory.FullName);
+
+        foreach (var file in files)
+            file.CopyTo(Path.Combine(destinationDirectory.FullName, file.Name));
+
+        if (recursive)
+        {
+            foreach (var subDirectory in subDirectories)
+                CopyDirectory(subDirectory, new(Path.Combine(destinationDirectory.FullName, subDirectory.Name)), recursive);
+        }
     }
 }
 
