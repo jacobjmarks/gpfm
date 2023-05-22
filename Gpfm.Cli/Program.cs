@@ -1,4 +1,4 @@
-﻿using System.CommandLine;
+using System.CommandLine;
 using System.IO.Compression;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -161,7 +161,7 @@ public class Job
 
         Console.WriteLine($"Extracting ...");
 
-        var extractDirectory = Path.Join(stagingDirectory.FullName, Path.ChangeExtension(stagingFile.Name, null));
+        var extractDirectory = _config.Output;
         ZipFile.ExtractToDirectory(stagingFile.FullName, extractDirectory, overwriteFiles: true);
     }
 }
