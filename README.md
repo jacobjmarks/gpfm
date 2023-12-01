@@ -1,3 +1,3 @@
-# General Purpose File/Folder Merger
+# General Purpose Folder Merger
 
 Working title

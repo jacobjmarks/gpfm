@@ -2,35 +2,39 @@
 using System.Text.Json;
 using Gpfm.Core;
 
-var configFileOption = new Option<FileInfo>(new[] { "--configFile", "-c" })
+var configFileOption = new CliOption<FileInfo>("--configFile", "-c")
 {
     Description = "Configuration file for the job.",
-    IsRequired = true,
+    Required = true,
 };
 
-var outDirectoryOption = new Option<DirectoryInfo>(new[] { "--outDir", "-o" })
+var outDirectoryOption = new CliOption<DirectoryInfo>("--outDir", "-o")
 {
-    Description = "Directory in which to store the merged output."
-        + "\nWARNING: Directory will be deleted when the job starts.",
-    IsRequired = true,
+    Description = "Directory in which to store the merged output.",
+    Required = false,
 };
 
-var rootCommand = new RootCommand("General Purpose File/Folder Merger (GPFM) CLI")
+var rootCommand = new CliRootCommand("General Purpose File/Folder Merger (GPFM) CLI")
 {
-    Name = "gpfm",
+    configFileOption,
+    outDirectoryOption,
 };
-rootCommand.AddOption(configFileOption);
-rootCommand.AddOption(outDirectoryOption);
 
-rootCommand.SetHandler(async (configFile, outDirectory) =>
+rootCommand.SetAction(async (parseResult, cancellationToken) =>
 {
-    var configJson = await File.ReadAllTextAsync(configFile.FullName);
+    var configFile = parseResult.GetValue(configFileOption)
+        ?? throw new ArgumentException(configFileOption.Name);
+    var outDirectory = parseResult.GetValue(outDirectoryOption);
+
+    var configJson = await File.ReadAllTextAsync(configFile.FullName, cancellationToken);
     var config = JsonSerializer.Deserialize<JobConfig>(configJson)
         ?? throw new JsonException("Deserialized object instance is null");
 
-    config = config with { Output = outDirectory.FullName };
+    if (outDirectory != null)
+        config = config with { Output = outDirectory.FullName };
 
-    await Job.RunAsync(config);
-}, configFileOption, outDirectoryOption);
+    await Job.RunAsync(config, cancellationToken);
+});
 
-return await rootCommand.InvokeAsync(args);
+var configuration = new CliConfiguration(rootCommand);
+return await configuration.InvokeAsync(args);
