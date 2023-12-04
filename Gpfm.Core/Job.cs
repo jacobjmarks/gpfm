@@ -1,6 +1,19 @@
 namespace Gpfm.Core;
 
-public record JobStep(string? Name, bool Skip, string Source);
+public record JobStep
+{
+    public string? Name { get; set; }
+    public string Source { get; set; }
+    public bool Skip { get; set; }
+
+    public JobStep(string name, string source, bool skip = false)
+    {
+        Name = name;
+        Source = source;
+        Skip = skip;
+    }
+};
+
 public record JobConfig(IEnumerable<JobStep> Steps, string Output);
 
 public class Job(JobConfig config)
