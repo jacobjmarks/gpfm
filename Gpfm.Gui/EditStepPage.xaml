@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="Gpfm.Gui.EditStepPage">
+    <Grid RowDefinitions="*, auto" Padding="15">
+        <VerticalStackLayout Grid.Row="0" Spacing="10">
+            <Label Text="Name" />
+            <Entry Text="{Binding Step.Name}" Completed="Entry_Completed" />
+            <Label Text="Source" />
+            <Grid RowDefinitions="*" ColumnDefinitions="*, auto" ColumnSpacing="10">
+                <Entry Grid.Column="0" Text="{Binding Step.Source}" Completed="Entry_Completed" />
+                <ImageButton Grid.Column="1" Clicked="SetSourceButton_Clicked" CornerRadius="5">
+                    <ImageButton.Source>
+                        <FontImageSource FontFamily="FontAwesomeRegular" Glyph="&#xf07c;" Size="16" />
+                    </ImageButton.Source>
+                </ImageButton>
+            </Grid>
+        </VerticalStackLayout>
+        <Button Grid.Row="1" Text="OK" Clicked="OkButton_Clicked" HorizontalOptions="End" />
+    </Grid>
+</ContentPage>

@@ -1,13 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="Gpfm.Gui.MainPage">
-
-    <ScrollView>
-        <VerticalStackLayout
-            Padding="30,0"
-            Spacing="25">
-            <ListView ItemsSource="{Binding Steps}">
+    <Grid RowDefinitions="*, auto" ColumnDefinitions="*, auto" Padding="10" RowSpacing="10" ColumnSpacing="10">
+        <ScrollView Grid.Row="0" Grid.ColumnSpan="2">
+            <ListView ItemsSource="{Binding Steps}" SelectionMode="None">
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <ViewCell>
@@ -18,15 +16,31 @@
                                     <Label Text="{Binding Source}" Opacity="0.8" />
                                 </VerticalStackLayout>
                                 <HorizontalStackLayout Grid.Column="2" VerticalOptions="Center">
-                                    <Button BorderWidth="0" Background="Transparent" Text="✏️" Clicked="EditStepButton_Clicked" />
-                                    <Button BorderWidth="0" Background="Transparent" Text="🗑️" Clicked="RemoveStepButton_Clicked" />
+                                    <ImageButton Clicked="EditStepButton_Clicked" Background="Transparent">
+                                        <ImageButton.Source>
+                                            <FontImageSource FontFamily="FontAwesomeRegular" Glyph="&#xf044;" Size="16" />
+                                        </ImageButton.Source>
+                                    </ImageButton>
+                                    <ImageButton Clicked="RemoveStepButton_Clicked" Background="Transparent">
+                                        <ImageButton.Source>
+                                            <FontImageSource FontFamily="FontAwesomeRegular" Glyph="&#xf2ed;" Size="16" />
+                                        </ImageButton.Source>
+                                    </ImageButton>
                                 </HorizontalStackLayout>
                             </Grid>
                         </ViewCell>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
-        </VerticalStackLayout>
-    </ScrollView>
-
+        </ScrollView>
+        <Entry Grid.Row="1" Text="{Binding Output}" ReturnType="Done" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" />
+        <HorizontalStackLayout Grid.Row="1" Grid.Column="1" Spacing="10">
+            <ImageButton Grid.Column="1" Clicked="SetOutputButton_Clicked" CornerRadius="5">
+                <ImageButton.Source>
+                    <FontImageSource FontFamily="FontAwesomeRegular" Glyph="&#xf07c;" Size="16" />
+                </ImageButton.Source>
+            </ImageButton>
+            <Button Text="Merge" WidthRequest="125" Clicked="MergeButton_Clicked" />
+        </HorizontalStackLayout>
+    </Grid>
 </ContentPage>
