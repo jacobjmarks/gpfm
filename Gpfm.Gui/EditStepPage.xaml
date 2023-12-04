@@ -6,10 +6,10 @@
     <Grid RowDefinitions="*, auto" Padding="15">
         <VerticalStackLayout Grid.Row="0" Spacing="10">
             <Label Text="Name" />
-            <Entry Text="{Binding Step.Name}" Completed="Entry_Completed" />
+            <Entry Text="{Binding StepName}" Completed="Entry_Completed" />
             <Label Text="Source" />
             <Grid RowDefinitions="*" ColumnDefinitions="*, auto" ColumnSpacing="10">
-                <Entry Grid.Column="0" Text="{Binding Step.Source}" Completed="Entry_Completed" />
+                <Entry Grid.Column="0" Text="{Binding StepSource}" Completed="Entry_Completed" />
                 <ImageButton Grid.Column="1" Clicked="SetSourceButton_Clicked" CornerRadius="5">
                     <ImageButton.Source>
                         <FontImageSource FontFamily="FontAwesomeRegular" Glyph="&#xf07c;" Size="16" />
@@ -17,6 +17,9 @@
                 </ImageButton>
             </Grid>
         </VerticalStackLayout>
-        <Button Grid.Row="1" Text="OK" Clicked="OkButton_Clicked" HorizontalOptions="End" />
+        <HorizontalStackLayout Grid.Row="1" Spacing="10" HorizontalOptions="End">
+            <Button Text="Cancel" Clicked="CancelButton_Clicked" />
+            <Button Text="Save Changes" Clicked="SaveChangesButton_Clicked" />
+        </HorizontalStackLayout>
     </Grid>
 </ContentPage>

@@ -8,14 +8,37 @@ public partial class EditStepPage : ContentPage
 {
     public const string Route = "steps/edit";
 
-    private JobStep step = null!;
+    private JobStep _step = null!;
     public JobStep Step
     {
-        get => step;
+        get => _step;
         set
         {
-            step = value;
-            OnPropertyChanged(nameof(Step));
+            _step = value;
+            StepName = _step.Name;
+            StepSource = _step.Source;
+        }
+    }
+
+    private string _stepName = null!;
+    public string StepName
+    {
+        get => _stepName;
+        set
+        {
+            _stepName = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private string _stepSource = null!;
+    public string StepSource
+    {
+        get => _stepSource;
+        set
+        {
+            _stepSource = value;
+            OnPropertyChanged();
         }
     }
 
@@ -41,7 +64,7 @@ public partial class EditStepPage : ContentPage
                 return;
             }
 
-            Step.Source = folderPickerResult.Folder.Path;
+            StepSource = folderPickerResult.Folder.Path;
         }
         finally
         {
@@ -49,7 +72,24 @@ public partial class EditStepPage : ContentPage
         }
     }
 
-    private async void OkButton_Clicked(object sender, EventArgs e)
+    private async void SaveChangesButton_Clicked(object sender, EventArgs e)
+    {
+        if (sender is not Button button)
+            throw new InvalidOperationException();
+
+        button.IsEnabled = false;
+        try
+        {
+            SaveChanges();
+            await Shell.Current.GoToAsync("..");
+        }
+        finally
+        {
+            button.IsEnabled = true;
+        }
+    }
+
+    private async void CancelButton_Clicked(object sender, EventArgs e)
     {
         if (sender is not Button button)
             throw new InvalidOperationException();
@@ -67,6 +107,13 @@ public partial class EditStepPage : ContentPage
 
     private async void Entry_Completed(object sender, EventArgs e)
     {
+        SaveChanges();
         await Shell.Current.GoToAsync("..");
+    }
+
+    private void SaveChanges()
+    {
+        Step.Name = StepName;
+        Step.Source = StepSource;
     }
 }
