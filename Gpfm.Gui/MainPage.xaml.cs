@@ -38,6 +38,11 @@ public partial class MainPage : ContentPage
         BindingContext = this;
     }
 
+    private async void AddStepButton_Clicked(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync(AddStepPage.Route);
+    }
+
     private async void EditStepButton_Clicked(object sender, EventArgs e)
     {
         if (sender is not BindableObject button || button.BindingContext is not JobStep step)

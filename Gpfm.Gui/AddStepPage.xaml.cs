@@ -1,24 +1,10 @@
 ﻿using CommunityToolkit.Maui.Storage;
-using Gpfm.Core;
 
 namespace Gpfm.Gui;
 
-[QueryProperty(nameof(Step), nameof(Step))]
-public partial class EditStepPage : ContentPage
+public partial class AddStepPage : ContentPage
 {
-    public const string Route = "steps/edit";
-
-    private JobStep _step = null!;
-    public JobStep Step
-    {
-        get => _step;
-        set
-        {
-            _step = value;
-            StepName = _step.Name;
-            StepSource = _step.Source;
-        }
-    }
+    public const string Route = "steps/add";
 
     private string _stepName = null!;
     public string StepName
@@ -42,7 +28,7 @@ public partial class EditStepPage : ContentPage
         }
     }
 
-    public EditStepPage()
+    public AddStepPage()
     {
         InitializeComponent();
         BindingContext = this;
@@ -96,8 +82,8 @@ public partial class EditStepPage : ContentPage
         button.IsEnabled = false;
         try
         {
-            SaveChanges();
-            await Shell.Current.GoToAsync("..");
+            if (await SaveChangesAsync())
+                await Shell.Current.GoToAsync("..");
         }
         finally
         {
@@ -107,13 +93,26 @@ public partial class EditStepPage : ContentPage
 
     private async void Entry_Completed(object sender, EventArgs e)
     {
-        SaveChanges();
-        await Shell.Current.GoToAsync("..");
+        if (await SaveChangesAsync())
+            await Shell.Current.GoToAsync("..");
     }
 
-    private void SaveChanges()
+    private async Task<bool> SaveChangesAsync()
     {
-        Step.Name = StepName;
-        Step.Source = StepSource;
+        if (string.IsNullOrWhiteSpace(StepName))
+        {
+            await DisplayAlert("Error", "Invalid step name.", "OK");
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(StepSource))
+        {
+            await DisplayAlert("Error", "Invalid step source.", "OK");
+            return false;
+        }
+
+        var s = Shell.Current;
+        //MainPage.Steps.Add(new(StepName, StepSource));
+        return true;
     }
 }

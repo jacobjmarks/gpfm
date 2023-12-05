@@ -33,6 +33,7 @@
                 </ListView.ItemTemplate>
             </ListView>
         </ScrollView>
+        <Button Text="Add Step" Clicked="AddStepButton_Clicked" />
         <Entry Grid.Row="1" Text="{Binding Output}" ReturnType="Done" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" />
         <HorizontalStackLayout Grid.Row="1" Grid.Column="1" Spacing="10">
             <ImageButton Grid.Column="1" Clicked="SetOutputButton_Clicked" CornerRadius="5">

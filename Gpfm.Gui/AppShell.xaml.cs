@@ -6,6 +6,7 @@ public partial class AppShell : Shell
     {
         InitializeComponent();
 
+        Routing.RegisterRoute(AddStepPage.Route, typeof(AddStepPage));
         Routing.RegisterRoute(EditStepPage.Route, typeof(EditStepPage));
     }
 }
