@@ -178,10 +178,9 @@ public partial class MainPage : ContentPage
         try
         {
             var pickerResult = await FolderPicker.Default.PickAsync();
-            if (!pickerResult.IsSuccessful || pickerResult.Folder == null)
+            if (!pickerResult.IsSuccessful)
             {
-                var errorMessage = pickerResult.Exception?.Message ?? "An error has occurred.";
-                await DisplayAlert("Error", errorMessage, "OK");
+                await DisplayAlert("Error", pickerResult.Exception.Message, "OK");
                 return;
             }
 
