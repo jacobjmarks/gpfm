@@ -6,20 +6,11 @@ namespace Gpfm.Gui;
 
 public partial class MainPage : ContentPage
 {
-    private ObservableCollection<JobStep> steps = [
+    public static ObservableCollection<JobStep> Steps { get; set; } = [
         new("First Step", "file://foobar/first"),
         new("Second Step", "file://foobar/second"),
         new("Third Step", "file://foobar/third"),
     ];
-    public ObservableCollection<JobStep> Steps
-    {
-        get => steps;
-        set
-        {
-            steps = value;
-            OnPropertyChanged();
-        }
-    }
 
     private string? output;
     public string? Output

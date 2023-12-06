@@ -111,8 +111,7 @@ public partial class AddStepPage : ContentPage
             return false;
         }
 
-        var s = Shell.Current;
-        //MainPage.Steps.Add(new(StepName, StepSource));
+        MainPage.Steps.Add(new(StepName, StepSource));
         return true;
     }
 }
