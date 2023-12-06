@@ -5,6 +5,12 @@
              xmlns:local="clr-namespace:Gpfm.Gui"
              x:Class="Gpfm.Gui.MainPage">
     <StackLayout Orientation="Vertical" Margin="15" Spacing="10">
+        <StackLayout Orientation="Horizontal" Spacing="5">
+            <Button Text="Open" Clicked="OpenButton_Clicked" />
+            <Button Text="Save" Clicked="SaveButton_Clicked" />
+            <Button Text="Save As" Clicked="SaveAsButton_Clicked" />
+        </StackLayout>
+        <Label Text="{Binding JobFilePath}" VerticalOptions="Center" />
         <ScrollView VerticalOptions="FillAndExpand">
             <ListView ItemsSource="{Binding Source={x:Static local:MainPage.Steps}}" SelectionMode="None">
                 <ListView.ItemTemplate>

@@ -1,16 +1,26 @@
-﻿using CommunityToolkit.Maui.Storage;
+﻿using CommunityToolkit.Maui.Alerts;
+using CommunityToolkit.Maui.Storage;
 using Gpfm.Core;
 using System.Collections.ObjectModel;
+using System.Text;
+using System.Text.Json;
 
 namespace Gpfm.Gui;
 
 public partial class MainPage : ContentPage
 {
-    public static ObservableCollection<JobStep> Steps { get; set; } = [
-        new("First Step", "file://foobar/first"),
-        new("Second Step", "file://foobar/second"),
-        new("Third Step", "file://foobar/third"),
-    ];
+    public static ObservableCollection<JobStep> Steps { get; set; } = [];
+
+    private string? jobFilePath;
+    public string? JobFilePath
+    {
+        get => jobFilePath;
+        set
+        {
+            jobFilePath = value;
+            OnPropertyChanged();
+        }
+    }
 
     private string? output;
     public string? Output
@@ -27,6 +37,115 @@ public partial class MainPage : ContentPage
     {
         InitializeComponent();
         BindingContext = this;
+    }
+
+    private async void OpenButton_Clicked(object sender, EventArgs e)
+    {
+        if (sender is not VisualElement button)
+            throw new InvalidOperationException();
+
+        button.IsEnabled = false;
+        try
+        {
+            var pickerResult = await FilePicker.Default.PickAsync();
+            if (pickerResult == null)
+                return;
+
+            Job job;
+            try
+            {
+                job = await Job.OpenAsync(pickerResult.FullPath);
+            }
+            catch (FileNotFoundException)
+            {
+                await DisplayAlert("Error", $"File not found: {pickerResult.FullPath}", "OK");
+                return;
+            }
+            catch (JsonException)
+            {
+
+                await DisplayAlert("Error", "Job configuration file is malformed.", "OK");
+                return;
+            }
+            catch
+            {
+                await DisplayAlert("Error", "An error has occurred.", "OK");
+                return;
+            }
+
+            JobFilePath = pickerResult.FullPath;
+
+            Steps.Clear();
+            foreach (var step in job.Config.Steps)
+                Steps.Add(step);
+            Output = job.Config.Output;
+        }
+        finally
+        {
+            button.IsEnabled = true;
+        }
+    }
+
+    private async void SaveButton_Clicked(object sender, EventArgs e)
+    {
+        if (sender is not VisualElement button)
+            throw new InvalidOperationException();
+
+        button.IsEnabled = false;
+        try
+        {
+            if (string.IsNullOrEmpty(JobFilePath))
+                return;
+
+            if (!File.Exists(JobFilePath))
+            {
+                SaveAsButton_Clicked(sender, e);
+                return;
+            }
+
+            var job = new Job(new(Steps, Output ?? ""));
+            var serialized = job.Serialize();
+            await File.WriteAllTextAsync(JobFilePath, serialized);
+
+            Toast.Make("Saved");
+        }
+        finally
+        {
+            button.IsEnabled = true;
+        }
+    }
+
+    private async void SaveAsButton_Clicked(object sender, EventArgs e)
+    {
+        if (sender is not VisualElement button)
+            throw new InvalidOperationException();
+
+        button.IsEnabled = false;
+        try
+        {
+            if (string.IsNullOrEmpty(JobFilePath))
+                return;
+
+            var job = new Job(new(Steps, Output ?? ""));
+            var serialized = job.Serialize();
+
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(serialized));
+            var saveResult = await FileSaver.Default.SaveAsync(".gpfm", stream);
+            if (!saveResult.IsSuccessful || string.IsNullOrEmpty(saveResult.FilePath))
+            {
+                var errorMessage = saveResult.Exception?.Message ?? "An error has occurred.";
+                await DisplayAlert("Error", errorMessage, "OK");
+                return;
+            }
+
+            JobFilePath = saveResult.FilePath;
+
+            Toast.Make("Saved");
+        }
+        finally
+        {
+            button.IsEnabled = true;
+        }
     }
 
     private async void AddStepButton_Clicked(object sender, EventArgs e)
@@ -88,8 +207,7 @@ public partial class MainPage : ContentPage
         button.IsEnabled = false;
         try
         {
-            var jobConfig = new JobConfig(Steps, Output);
-            var job = new Job(jobConfig);
+            var job = new Job(new(Steps, Output));
             await job.RunAsync();
             await DisplayAlert("Done", "Successfully merged.", "OK");
         }

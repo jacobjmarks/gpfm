@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Gpfm.Core;
 
 public record JobStep
@@ -14,11 +16,33 @@ public record JobStep
     }
 };
 
-public record JobConfig(IEnumerable<JobStep> Steps, string Output);
+public record JobConfig(ICollection<JobStep> Steps, string Output);
 
 public class Job(JobConfig config)
 {
     private readonly JobConfig _config = config;
+    public JobConfig Config { get => _config; }
+
+    public static async Task<Job> OpenAsync(string filePath, CancellationToken cancellationToken = default)
+    {
+        if (!File.Exists(filePath))
+            throw new FileNotFoundException();
+
+        var serialized = await File.ReadAllTextAsync(filePath, cancellationToken);
+        return Deserialize(serialized);
+    }
+
+    public string Serialize()
+    {
+        return JsonSerializer.Serialize(_config);
+    }
+
+    public static Job Deserialize(string serialized)
+    {
+        var jobConfig = JsonSerializer.Deserialize<JobConfig>(serialized)
+            ?? throw new JsonException();
+        return new(jobConfig);
+    }
 
     public static async Task RunAsync(JobConfig config, CancellationToken cancellationToken = default)
     {
