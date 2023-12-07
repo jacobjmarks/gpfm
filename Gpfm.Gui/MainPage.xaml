@@ -3,52 +3,57 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              xmlns:local="clr-namespace:Gpfm.Gui"
-             x:Class="Gpfm.Gui.MainPage">
+             x:Class="Gpfm.Gui.MainPage"
+             BindingContext="{Binding Source={RelativeSource Self}}">
     <StackLayout Orientation="Vertical" Margin="15" Spacing="10">
         <StackLayout Orientation="Horizontal" Spacing="5">
             <Button Text="Open" Clicked="OpenButton_Clicked" />
             <Button Text="Save" Clicked="SaveButton_Clicked" />
             <Button Text="Save As" Clicked="SaveAsButton_Clicked" />
+            <Button Text="Add Step" Clicked="AddStepButton_Clicked" HorizontalOptions="EndAndExpand">
+                <Button.ImageSource>
+                    <FontImageSource FontFamily="FontAwesomeRegular" Size="Default" Glyph="&#x2b;" />
+                </Button.ImageSource>
+            </Button>
         </StackLayout>
-        <Label Text="{Binding JobFilePath}" VerticalOptions="Center" />
+        <Label Text="{Binding JobFilePath, Mode=OneWay}" VerticalOptions="Center" />
         <ScrollView VerticalOptions="FillAndExpand">
             <ListView ItemsSource="{Binding Source={x:Static local:MainPage.Steps}}" SelectionMode="None">
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <ViewCell>
-                            <Grid RowDefinitions="Auto" ColumnDefinitions="Auto, *, Auto" RowSpacing="5" ColumnSpacing="10" Padding="10">
-                                <Label Grid.Column="0" Text="#" />
-                                <VerticalStackLayout Grid.Column="1">
-                                    <Label Text="{Binding Name}" />
-                                    <Label Text="{Binding Source}" Opacity="0.8" />
+                            <StackLayout Orientation="Horizontal" Spacing="15" Padding="10">
+                                <Label Grid.Column="0" Text="##" VerticalOptions="Center" />
+                                <VerticalStackLayout>
+                                    <Label Text="{Binding Name, Mode=OneWay}" />
+                                    <Label Text="{Binding Source, Mode=OneWay}" Opacity="0.8" />
                                 </VerticalStackLayout>
-                                <HorizontalStackLayout Grid.Column="2" VerticalOptions="Center">
-                                    <ImageButton Clicked="EditStepButton_Clicked" Background="Transparent">
-                                        <ImageButton.Source>
-                                            <FontImageSource FontFamily="FontAwesomeRegular" Glyph="&#xf044;" Size="16" />
-                                        </ImageButton.Source>
-                                    </ImageButton>
-                                    <ImageButton Clicked="RemoveStepButton_Clicked" Background="Transparent">
-                                        <ImageButton.Source>
-                                            <FontImageSource FontFamily="FontAwesomeRegular" Glyph="&#xf2ed;" Size="16" />
-                                        </ImageButton.Source>
-                                    </ImageButton>
+                                <HorizontalStackLayout HorizontalOptions="EndAndExpand" VerticalOptions="Center" Spacing="10">
+                                    <Button Clicked="EditStepButton_Clicked">
+                                        <Button.ImageSource>
+                                            <FontImageSource FontFamily="FontAwesomeRegular" Size="Default" Glyph="&#xf044;" />
+                                        </Button.ImageSource>
+                                    </Button>
+                                    <Button Clicked="RemoveStepButton_Clicked">
+                                        <Button.ImageSource>
+                                            <FontImageSource FontFamily="FontAwesomeRegular" Size="Default" Glyph="&#xf2ed;" />
+                                        </Button.ImageSource>
+                                    </Button>
                                 </HorizontalStackLayout>
-                            </Grid>
+                            </StackLayout>
                         </ViewCell>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
         </ScrollView>
-        <Button Text="Add Step" Clicked="AddStepButton_Clicked" />
         <StackLayout Orientation="Horizontal" Spacing="10">
             <Entry Text="{Binding Output}" ReturnType="Done" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" HorizontalOptions="FillAndExpand" />
             <HorizontalStackLayout Spacing="10">
-                <ImageButton Clicked="SetOutputButton_Clicked" CornerRadius="5">
-                    <ImageButton.Source>
-                        <FontImageSource FontFamily="FontAwesomeRegular" Glyph="&#xf07c;" Size="16" />
-                    </ImageButton.Source>
-                </ImageButton>
+                <Button Clicked="SetOutputButton_Clicked">
+                    <Button.ImageSource>
+                        <FontImageSource FontFamily="FontAwesomeRegular" Size="Default" Glyph="&#xf07c;" />
+                    </Button.ImageSource>
+                </Button>
                 <Button Text="Merge" WidthRequest="125" Clicked="MergeButton_Clicked" />
             </HorizontalStackLayout>
         </StackLayout>
