@@ -3,8 +3,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              xmlns:local="clr-namespace:Gpfm.Gui"
+             xmlns:converters="clr-namespace:Gpfm.Gui.Converters"
              x:Class="Gpfm.Gui.MainPage"
              BindingContext="{Binding Source={RelativeSource Self}}">
+    <ContentPage.Resources>
+        <converters:StepNumberConverter x:Key="StepNumberConverter" />
+    </ContentPage.Resources>
     <StackLayout Orientation="Vertical" Margin="15" Spacing="10">
         <StackLayout Orientation="Horizontal" Spacing="5">
             <Button Text="Open" Clicked="OpenButton_Clicked" />
@@ -23,12 +27,12 @@
                     <DataTemplate>
                         <ViewCell>
                             <StackLayout Orientation="Horizontal" Spacing="15" Padding="10">
-                                <Label Grid.Column="0" Text="##" VerticalOptions="Center" />
-                                <VerticalStackLayout>
+                                <Label VerticalOptions="Center" Text="{Binding Converter={StaticResource StepNumberConverter}, Mode=OneWay, StringFormat='{0:d2}'}" />
+                                <VerticalStackLayout HorizontalOptions="FillAndExpand">
                                     <Label Text="{Binding Name, Mode=OneWay}" />
                                     <Label Text="{Binding Source, Mode=OneWay}" Opacity="0.8" />
                                 </VerticalStackLayout>
-                                <HorizontalStackLayout HorizontalOptions="EndAndExpand" VerticalOptions="Center" Spacing="10">
+                                <HorizontalStackLayout VerticalOptions="Center" Spacing="10">
                                     <Button Clicked="EditStepButton_Clicked">
                                         <Button.ImageSource>
                                             <FontImageSource FontFamily="FontAwesomeRegular" Size="Default" Glyph="&#xf044;" />
