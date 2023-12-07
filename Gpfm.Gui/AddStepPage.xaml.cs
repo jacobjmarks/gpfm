@@ -31,7 +31,6 @@ public partial class AddStepPage : ContentPage
     public AddStepPage()
     {
         InitializeComponent();
-        BindingContext = this;
     }
 
     private async void SetSourceButton_Clicked(object sender, EventArgs e)
