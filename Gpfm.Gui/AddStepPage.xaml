@@ -14,7 +14,7 @@
             <VerticalStackLayout Spacing="10">
                 <Label Text="Source" />
                 <StackLayout Orientation="Horizontal" Spacing="10">
-                    <Entry HorizontalOptions="FillAndExpand" Text="{Binding StepSource}" Completed="Entry_Completed" />
+                    <Entry Text="{Binding StepSource}" Completed="Entry_Completed" HorizontalOptions="FillAndExpand" />
                     <Button Clicked="SetSourceButton_Clicked" ImageSource="{ext:Icon Name=OpenFolder}" />
                 </StackLayout>
             </VerticalStackLayout>
