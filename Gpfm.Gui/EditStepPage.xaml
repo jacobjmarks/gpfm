@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:ext="clr-namespace:Gpfm.Gui.MarkupExtensions"
              x:Class="Gpfm.Gui.EditStepPage"
              BindingContext="{Binding Source={RelativeSource Self}}">
     <Grid RowDefinitions="*, auto" Padding="15">
@@ -11,11 +12,7 @@
             <Label Text="Source" />
             <Grid RowDefinitions="*" ColumnDefinitions="*, auto" ColumnSpacing="10">
                 <Entry Grid.Column="0" Text="{Binding StepSource}" Completed="Entry_Completed" />
-                <ImageButton Grid.Column="1" Clicked="SetSourceButton_Clicked" CornerRadius="5">
-                    <ImageButton.Source>
-                        <FontImageSource FontFamily="FontAwesomeRegular" Glyph="&#xf07c;" Size="16" />
-                    </ImageButton.Source>
-                </ImageButton>
+                <ImageButton Grid.Column="1" Clicked="SetSourceButton_Clicked" CornerRadius="5" Source="{ext:Icon Name=OpenFolder}" />
             </Grid>
         </VerticalStackLayout>
         <HorizontalStackLayout Grid.Row="1" Spacing="10" HorizontalOptions="End">
