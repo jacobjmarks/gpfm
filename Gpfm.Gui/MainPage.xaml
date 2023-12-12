@@ -4,6 +4,7 @@
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              xmlns:local="clr-namespace:Gpfm.Gui"
              xmlns:converters="clr-namespace:Gpfm.Gui.Converters"
+             xmlns:ext="clr-namespace:Gpfm.Gui.MarkupExtensions"
              x:Class="Gpfm.Gui.MainPage"
              BindingContext="{Binding Source={RelativeSource Self}}">
     <ContentPage.Resources>
@@ -14,11 +15,7 @@
             <Button Text="Open" Clicked="OpenButton_Clicked" />
             <Button Text="Save" Clicked="SaveButton_Clicked" />
             <Button Text="Save As" Clicked="SaveAsButton_Clicked" />
-            <Button Text="Add Step" Clicked="AddStepButton_Clicked" HorizontalOptions="EndAndExpand">
-                <Button.ImageSource>
-                    <FontImageSource FontFamily="FontAwesomeRegular" Size="Default" Glyph="&#x2b;" />
-                </Button.ImageSource>
-            </Button>
+            <Button Text="Add Step" Clicked="AddStepButton_Clicked" HorizontalOptions="EndAndExpand" ImageSource="{ext:Icon Name=Add}" />
         </StackLayout>
         <Label Text="{Binding JobFilePath, Mode=OneWay}" VerticalOptions="Center" />
         <ScrollView VerticalOptions="FillAndExpand">
@@ -33,16 +30,8 @@
                                     <Label Text="{Binding Source, Mode=OneWay}" Opacity="0.8" />
                                 </VerticalStackLayout>
                                 <HorizontalStackLayout VerticalOptions="Center" Spacing="10">
-                                    <Button Clicked="EditStepButton_Clicked">
-                                        <Button.ImageSource>
-                                            <FontImageSource FontFamily="FontAwesomeRegular" Size="Default" Glyph="&#xf044;" />
-                                        </Button.ImageSource>
-                                    </Button>
-                                    <Button Clicked="RemoveStepButton_Clicked">
-                                        <Button.ImageSource>
-                                            <FontImageSource FontFamily="FontAwesomeRegular" Size="Default" Glyph="&#xf2ed;" />
-                                        </Button.ImageSource>
-                                    </Button>
+                                    <Button Clicked="EditStepButton_Clicked" ImageSource="{ext:Icon Name=Edit}" />
+                                    <Button Clicked="RemoveStepButton_Clicked" ImageSource="{ext:Icon Name=Delete}" />
                                 </HorizontalStackLayout>
                             </StackLayout>
                         </ViewCell>
@@ -53,11 +42,7 @@
         <StackLayout Orientation="Horizontal" Spacing="10">
             <Entry Text="{Binding Output}" ReturnType="Done" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" HorizontalOptions="FillAndExpand" />
             <HorizontalStackLayout Spacing="10">
-                <Button Clicked="SetOutputButton_Clicked">
-                    <Button.ImageSource>
-                        <FontImageSource FontFamily="FontAwesomeRegular" Size="Default" Glyph="&#xf07c;" />
-                    </Button.ImageSource>
-                </Button>
+                <Button Clicked="SetOutputButton_Clicked" ImageSource="{ext:Icon Name=OpenFolder}" />
                 <Button Text="Merge" WidthRequest="125" Clicked="MergeButton_Clicked" />
             </HorizontalStackLayout>
         </StackLayout>
