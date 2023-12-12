@@ -5,19 +5,23 @@
              xmlns:ext="clr-namespace:Gpfm.Gui.MarkupExtensions"
              x:Class="Gpfm.Gui.EditStepPage"
              BindingContext="{Binding Source={RelativeSource Self}}">
-    <Grid RowDefinitions="*, auto" Padding="15">
-        <VerticalStackLayout Grid.Row="0" Spacing="10">
-            <Label Text="Name" />
-            <Entry Text="{Binding StepName}" Completed="Entry_Completed" />
-            <Label Text="Source" />
-            <Grid RowDefinitions="*" ColumnDefinitions="*, auto" ColumnSpacing="10">
-                <Entry Grid.Column="0" Text="{Binding StepSource}" Completed="Entry_Completed" />
-                <ImageButton Grid.Column="1" Clicked="SetSourceButton_Clicked" CornerRadius="5" Source="{ext:Icon Name=OpenFolder}" />
-            </Grid>
+    <StackLayout Orientation="Vertical" Padding="15" Spacing="10">
+        <VerticalStackLayout Spacing="15">
+            <VerticalStackLayout Spacing="10">
+                <Label Text="Name" />
+                <Entry Text="{Binding StepName}" Completed="Entry_Completed" />
+            </VerticalStackLayout>
+            <VerticalStackLayout Spacing="10">
+                <Label Text="Source" />
+                <StackLayout Orientation="Horizontal" Spacing="10">
+                    <Entry Text="{Binding StepSource}" Completed="Entry_Completed" HorizontalOptions="FillAndExpand" />
+                    <Button Clicked="SetSourceButton_Clicked" ImageSource="{ext:Icon Name=OpenFolder}" />
+                </StackLayout>
+            </VerticalStackLayout>
         </VerticalStackLayout>
-        <HorizontalStackLayout Grid.Row="1" Spacing="10" HorizontalOptions="End">
+        <HorizontalStackLayout Spacing="10" VerticalOptions="EndAndExpand" HorizontalOptions="End">
             <Button Text="Cancel" Clicked="CancelButton_Clicked" />
             <Button Text="OK" Clicked="OkButton_Clicked" />
         </HorizontalStackLayout>
-    </Grid>
+    </StackLayout>
 </ContentPage>
