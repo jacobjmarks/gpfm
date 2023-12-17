@@ -10,11 +10,17 @@
     <ContentPage.Resources>
         <converters:StepNumberConverter x:Key="StepNumberConverter" />
     </ContentPage.Resources>
-    <StackLayout Orientation="Vertical" Margin="15" Spacing="10">
+    <ContentPage.MenuBarItems>
+        <MenuBarItem Text="File">
+            <MenuFlyoutItem Text="Open" Clicked="OpenButton_Clicked" />
+            <MenuFlyoutItem Text="Save" Clicked="SaveButton_Clicked" />
+            <MenuFlyoutItem Text="Save As" Clicked="SaveAsButton_Clicked" />
+            <MenuFlyoutSeparator />
+            <MenuFlyoutItem Text="Exit" Clicked="ExitButton_Clicked" />
+        </MenuBarItem>
+    </ContentPage.MenuBarItems>
+    <StackLayout Orientation="Vertical" Padding="15" Spacing="10">
         <StackLayout Orientation="Horizontal" Spacing="5">
-            <Button Text="Open" Clicked="OpenButton_Clicked" />
-            <Button Text="Save" Clicked="SaveButton_Clicked" />
-            <Button Text="Save As" Clicked="SaveAsButton_Clicked" />
             <Button Text="Add Step" Clicked="AddStepButton_Clicked" HorizontalOptions="EndAndExpand" ImageSource="{ext:Icon Name=Add}" />
         </StackLayout>
         <Label Text="{Binding JobFilePath, Mode=OneWay}" VerticalOptions="Center" />

@@ -40,10 +40,10 @@ public partial class MainPage : ContentPage
 
     private async void OpenButton_Clicked(object sender, EventArgs e)
     {
-        if (sender is not VisualElement button)
+        if (sender is not MenuFlyoutItem menuItem)
             throw new InvalidOperationException();
 
-        button.IsEnabled = false;
+        menuItem.IsEnabled = false;
         try
         {
             var pickerResult = await FilePicker.Default.PickAsync();
@@ -81,16 +81,16 @@ public partial class MainPage : ContentPage
         }
         finally
         {
-            button.IsEnabled = true;
+            menuItem.IsEnabled = true;
         }
     }
 
     private async void SaveButton_Clicked(object sender, EventArgs e)
     {
-        if (sender is not VisualElement button)
+        if (sender is not MenuFlyoutItem menuItem)
             throw new InvalidOperationException();
 
-        button.IsEnabled = false;
+        menuItem.IsEnabled = false;
         try
         {
             if (string.IsNullOrEmpty(JobFilePath))
@@ -110,16 +110,16 @@ public partial class MainPage : ContentPage
         }
         finally
         {
-            button.IsEnabled = true;
+            menuItem.IsEnabled = true;
         }
     }
 
     private async void SaveAsButton_Clicked(object sender, EventArgs e)
     {
-        if (sender is not VisualElement button)
+        if (sender is not MenuFlyoutItem menuItem)
             throw new InvalidOperationException();
 
-        button.IsEnabled = false;
+        menuItem.IsEnabled = false;
         try
         {
             if (string.IsNullOrEmpty(JobFilePath))
@@ -143,8 +143,13 @@ public partial class MainPage : ContentPage
         }
         finally
         {
-            button.IsEnabled = true;
+            menuItem.IsEnabled = true;
         }
+    }
+
+    private void ExitButton_Clicked(object sender, EventArgs e)
+    {
+        Application.Current?.Quit();
     }
 
     private async void AddStepButton_Clicked(object sender, EventArgs e)
