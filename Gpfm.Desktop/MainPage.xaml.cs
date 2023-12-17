@@ -131,11 +131,7 @@ public partial class MainPage : ContentPage
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes(serialized));
             var saveResult = await FileSaver.Default.SaveAsync(".gpfm", stream);
             if (!saveResult.IsSuccessful || string.IsNullOrEmpty(saveResult.FilePath))
-            {
-                var errorMessage = saveResult.Exception?.Message ?? "An error has occurred.";
-                await DisplayAlert("Error", errorMessage, "OK");
                 return;
-            }
 
             JobFilePath = saveResult.FilePath;
 
@@ -182,11 +178,8 @@ public partial class MainPage : ContentPage
         try
         {
             var pickerResult = await FolderPicker.Default.PickAsync();
-            if (!pickerResult.IsSuccessful)
-            {
-                await DisplayAlert("Error", pickerResult.Exception.Message, "OK");
+            if (!pickerResult.IsSuccessful || string.IsNullOrEmpty(pickerResult.Folder.Path))
                 return;
-            }
 
             Output = pickerResult.Folder.Path;
         }

@@ -56,12 +56,8 @@ public partial class EditStepPage : ContentPage
         try
         {
             var folderPickerResult = await FolderPicker.Default.PickAsync();
-            if (!folderPickerResult.IsSuccessful || folderPickerResult.Folder == null)
-            {
-                var errorMessage = folderPickerResult.Exception?.Message ?? "An error has occurred.";
-                await DisplayAlert("Error", errorMessage, "OK");
+            if (!folderPickerResult.IsSuccessful || string.IsNullOrEmpty(folderPickerResult.Folder.Path))
                 return;
-            }
 
             StepSource = folderPickerResult.Folder.Path;
         }
